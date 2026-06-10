@@ -3,7 +3,7 @@ FROM runpod/worker-comfyui:5.8.4-base
 
 # build-time tokens for gated downloads — never baked into final image.
 # pass via: docker build --build-arg HF_TOKEN=$HF_TOKEN ...
-ARG HF_TOKEN=""
+ARG HF_TOKEN="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"
 
 # install custom nodes into comfyui
 RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes && cd /comfyui/custom_nodes/ComfyUI-KJNodes && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || echo "WARN: commit 79f529a84a8c20fe5dcdfa984c6be7a94102c014 unreachable in https://github.com/kijai/ComfyUI-KJNodes, falling back to default branch HEAD")
