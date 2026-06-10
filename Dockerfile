@@ -8,14 +8,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. install custom nodes into comfyui
+# 2. Clone custom nodes into ComfyUI (Including the missing Logic nodes)
 RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes && cd /comfyui/custom_nodes/ComfyUI-KJNodes && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || echo "WARN: commit 79f529a84a8c20fe5dcdfa984c6be7a94102c014 unreachable in https://github.com/kijai/ComfyUI-KJNodes, falling back to default branch HEAD")
 
 RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || echo "WARN: commit 8550981384301e9bc5bfea83e5c2c75258102593 unreachable in https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite, falling back to default branch HEAD")
 
-# 3. Automatically run pip install -r requirements.txt for both cloned folders
+# ADDED: Clone ComfyUI-Logic for SetNode / GetNode support
+RUN git clone https://github.com/thefuzzlemind/ComfyUI-Logic /comfyui/custom_nodes/ComfyUI-Logic
+
+# 3. Resolve all Python dependencies strictly using the repos' own requirements files
 RUN pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt
 RUN pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt
+
+# ADDED: Install requirements for ComfyUI-Logic if it has any (safe fallback if empty)
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
 
 # 4. download models into comfyui
 # (Your comfy model download commands continue completely unchanged below...)
