@@ -3,11 +3,13 @@ FROM runpod/worker-comfyui:5.8.4-base
 # 1. Install system-level libraries for OpenCV (Crucial for headless Linux containers)
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
     libgl1 \
     libglx-mesa0 \
     libglib2.0-0 \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
+
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
     if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
         pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
