@@ -1,10 +1,8 @@
 FROM runpod/worker-comfyui:5.8.4-base
+
 USER root
 
-# CACHE BREAKER: Forces the build server to stop skipping the installation step
-ENV CACHE_BYPASS_DATE="2026_06_11_v1"
-
-# 1. Update system packages and install git cleanly (Never skipped now)
+# 1. Force real-time system packages update and install git + compilation prerequisites
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
@@ -16,49 +14,59 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Fix path explicitly to include normal system binary locations
+# Set standard system binary path variables
 ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/venv/bin:${PATH}"
 
 # 2. Install specialized WanVideo and auxiliary custom node extensions
-RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
     if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
-    fi
+    fi && rm -rf /var/lib/apt/lists/*
 
-# FIXED: Cloned the correct SVI Extender repository with recursive submodules
-RUN git clone --recursive https://github.com/Well-Made/ComfyUI-WanVideoWrapper-SVI /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI && \
+# FIXED: SVI Extender repository with recursive submodules (Protected Layer)
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone --recursive https://github.com/Well-Made/ComfyUI-WanVideoWrapper-SVI /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI && \
     if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt; \
-    fi
+    fi && rm -rf /var/lib/apt/lists/*
 
 # Keep Python packages current inside the virtual environment
 RUN /opt/venv/bin/pip install --no-cache-dir -U transformers
 
-RUN git clone --recursive https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone --recursive https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
     if [ -f /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt; \
-    fi
+    fi && rm -rf /var/lib/apt/lists/*
 
 # Install the core WanVideo Wrapper
-RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /comfyui/custom_nodes/ComfyUI-WanVideoWrapper && \
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /comfyui/custom_nodes/ComfyUI-WanVideoWrapper && \
     if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt; \
-    fi
+    fi && rm -rf /var/lib/apt/lists/*
 
 # 3. Install core utility node environments
-RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes \
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes \
     && cd /comfyui/custom_nodes/ComfyUI-KJNodes \
     && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || \
         (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || \
-        echo "WARN: falling back to default branch HEAD")
+        echo "WARN: falling back to default branch HEAD") \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
     && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
     && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || \
         (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
-        echo "WARN: falling back to default branch HEAD")
+        echo "WARN: falling back to default branch HEAD") \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_nodes/ComfyUI-Logic
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_nodes/ComfyUI-Logic \
+    && rm -rf /var/lib/apt/lists/*
 
 # Enforce script dependencies installation inside the virtual environment
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
