@@ -2,10 +2,7 @@ FROM runpod/worker-comfyui:5.8.4-base
 
 USER root
 
-# CACHE BREAKER: Forces the build server to stop skipping the installation step
-ENV CACHE_BYPASS_DATE="2026_06_11_v1"
-
-# 1. Update system packages and install git cleanly (Never skipped now)
+# 1. FORCE Real-Time System Setup & Initial Node Download in one step to break the cache permanently
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
@@ -15,18 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglx-mesa0 \
     libglib2.0-0 \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Fix path explicitly to include normal system binary locations
-ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/venv/bin:${PATH}"
-
-# 2. Install specialized WanVideo and auxiliary custom node extensions
-RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
-    if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes \
+    && if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
 
-# FIXED: Cloned the correct SVI Extender repository with recursive submodules
+# Explicit path configuration safety net
+ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/venv/bin:${PATH}"
+
+# 2. Install specialized WanVideo and auxiliary custom node extensions
 RUN git clone --recursive https://github.com/Well-Made/ComfyUI-WanVideoWrapper-SVI /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI && \
     if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt; \
