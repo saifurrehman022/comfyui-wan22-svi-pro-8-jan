@@ -1,9 +1,12 @@
 FROM runpod/worker-comfyui:5.8.4-base
 
-# 1. Install system-level libraries for OpenCV
+# 1. Install system-level libraries for OpenCV and compilation tools
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
+    build-essential \
+    g++ \
+    python3-dev \
     libgl1 \
     libglx-mesa0 \
     libglib2.0-0 \
@@ -16,15 +19,16 @@ RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCC
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
 
-RUN git clone https://github.com/Granddyser/wan-video-extender /comfyui/custom_nodes/wan-video-extender && \
-    if [ -f /comfyui/custom_nodes/wan-video-extender/requirements.txt ]; then \
-        /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/wan-video-extender/requirements.txt; \
+# FIXED: Cloned the correct SVI Extender repository with recursive submodules
+RUN git clone --recursive https://github.com/Well-Made/ComfyUI-WanVideoWrapper-SVI /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI && \
+    if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt ]; then \
+        /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt; \
     fi
 
 # Keep Python packages current inside the virtual environment
 RUN /opt/venv/bin/pip install --no-cache-dir -U transformers
 
-RUN git clone https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
+RUN git clone --recursive https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
     if [ -f /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt; \
     fi
@@ -54,7 +58,6 @@ RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_no
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
-
 # 4. download models into comfyui... (Keep your exact model code completely unchanged below this point)
 # (Your comfy model download commands continue completely unchanged below...)
 # download models into comfyui
