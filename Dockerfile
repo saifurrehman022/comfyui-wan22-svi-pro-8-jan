@@ -6,20 +6,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglx-mesa0 \
     libglib2.0-0 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes && cd /comfyui/custom_nodes/ComfyUI-KJNodes && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || echo "WARN: commit 79f529a84a8c20fe5dcdfa984c6be7a94102c014 unreachable in https://github.com/kijai/ComfyUI-KJNodes, falling back to default branch HEAD")
+# Keep Python packages current enough for newer custom nodes
+RUN pip install --no-cache-dir -U transformers
 
-RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || echo "WARN: commit 8550981384301e9bc5bfea83e5c2c75258102593 unreachable in https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite, falling back to default branch HEAD")
+# Existing nodes
+RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes \
+    && cd /comfyui/custom_nodes/ComfyUI-KJNodes \
+    && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || \
+        (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || \
+        echo "WARN: falling back to default branch HEAD")
 
-# Fixed Clone Step using the working link
+RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
+    && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
+    && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || \
+        (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
+        echo "WARN: falling back to default branch HEAD")
+
 RUN git clone https://github.com/theUpsider/ComfyUI-Logic /comfyui/custom_nodes/ComfyUI-Logic
 
-# 3. Resolve all Python dependencies strictly using the repos' own requirements files
-RUN pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt
-RUN pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt
+# If you use prompt-all-in-one-mw, add its repo here:
+# RUN git clone <PROMPT_ALL_IN_ONE_MW_REPO_URL> /comfyui/custom_nodes/prompt-all-in-one-mw
 
-# Safely catch ComfyUI-Logic requirements if they exist
+# Install node requirements if present
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
 
 # 4. Download models into ComfyUI
