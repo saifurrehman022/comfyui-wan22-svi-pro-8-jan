@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF
+    if [ -f /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt ]; then \
+        pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt; \
+    fi
 
 # 2. Install specialized WanVideo and auxiliary custom node extensions
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
