@@ -1,6 +1,6 @@
 FROM runpod/worker-comfyui:5.8.4-base
 
-# 1. Install system-level libraries for OpenCV and compilation tools
+# 1. Force system updates and install git/compilation tools in the SAME step as the first clone to beat the cache
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -11,15 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglx-mesa0 \
     libglib2.0-0 \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# 2. Install specialized WanVideo and auxiliary custom node extensions
-RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
-    if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes \
+    && if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
 
-# FIXED: Cloned the correct SVI Extender repository with recursive submodules
+# 2. Install specialized WanVideo and auxiliary custom node extensions
 RUN git clone --recursive https://github.com/Well-Made/ComfyUI-WanVideoWrapper-SVI /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI && \
     if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt ]; then \
         /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper-SVI/requirements.txt; \
@@ -58,6 +56,8 @@ RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_no
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
 RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
+
+# 4. download models into comfyui
 # (Your comfy model download commands continue completely unchanged below...)
 # download models into comfyui
 RUN BACKOFFS="10 20 30 60 90" && for i in 1 2 3 4 5; do comfy model download --url 'https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors' --relative-path models/loras --filename 'wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors' && break; if [ $i -eq 5 ]; then echo "model-download failed after 5 attempts" >&2; exit 1; fi; SLEEP=$(echo $BACKOFFS | cut -d ' ' -f $i) && echo "model-download attempt $i failed; retrying in $SLEEP seconds" >&2; sleep $SLEEP; done
