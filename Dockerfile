@@ -10,45 +10,50 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
-    if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
-        pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
+# 2. Install specialized WanVideo and auxiliary custom node extensions using exact system paths
+RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /workspace/ComfyUI/custom_nodes/IAMCCS-nodes && \
+    if [ -f /workspace/ComfyUI/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
+        pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
-RUN git clone https://github.com/Granddyser/wan-video-extender /comfyui/custom_nodes/wan-video-extender && \
-    if [ -f /comfyui/custom_nodes/wan-video-extender/requirements.txt ]; then \
-        pip install --no-cache-dir -r /comfyui/custom_nodes/wan-video-extender/requirements.txt; \
+
+RUN git clone https://github.com/Granddyser/wan-video-extender /workspace/ComfyUI/custom_nodes/wan-video-extender && \
+    if [ -f /workspace/ComfyUI/custom_nodes/wan-video-extender/requirements.txt ]; then \
+        pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/wan-video-extender/requirements.txt; \
     fi
+
 # Keep Python packages current enough for newer custom nodes
 RUN pip install --no-cache-dir -U transformers
-RUN git clone https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
-    if [ -f /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt ]; then \
-        pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt; \
+
+RUN git clone https://github.com/Well-Made/ComfyUI-Wan-SVI2Pro-FLF /workspace/ComfyUI/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF && \
+    if [ -f /workspace/ComfyUI/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt ]; then \
+        pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/ComfyUI-Wan-SVI2Pro-FLF/requirements.txt; \
     fi
-# Existing nodes
-RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes \
-    && cd /comfyui/custom_nodes/ComfyUI-KJNodes \
+
+# CRITICAL PATH FIX: Install the core WanVideo Wrapper into the true lowercase/uppercase directory
+RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /workspace/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper && \
+    if [ -f /workspace/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt ]; then \
+        pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt; \
+    fi
+
+# 3. Install core utility node environments
+RUN git clone https://github.com/kijai/ComfyUI-KJNodes /workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes \
+    && cd /workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes \
     && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || \
         (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || \
         echo "WARN: falling back to default branch HEAD")
 
-RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
-    && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
+RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /workspace/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite \
+    && cd /workspace/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite \
     && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || \
         (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
         echo "WARN: falling back to default branch HEAD")
-RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /comfyui/custom_nodes/ComfyUI-WanVideoWrapper && \
-    if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt ]; then \
-        pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt; \
-    fi
-RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_nodes/ComfyUI-Logic
-# If you use prompt-all-in-one-mw, add its repo here:
-# RUN git clone <PROMPT_ALL_IN_ONE_MW_REPO_URL> /comfyui/custom_nodes/prompt-all-in-one-mw
 
-# Install node requirements if present
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
+RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /workspace/ComfyUI/custom_nodes/ComfyUI-Logic
 
+# Enforce script dependencies installation on precise paths
+RUN if [ -f /workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
+RUN if [ -f /workspace/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
+RUN if [ -f /workspace/ComfyUI/custom_nodes/ComfyUI-Logic/requirements.txt ]; then pip install --no-cache-dir -r /workspace/ComfyUI/custom_nodes/ComfyUI-Logic/requirements.txt; fi
 # 4. Download models into ComfyUI
 # 4. download models into comfyui
 # (Your comfy model download commands continue completely unchanged below...)
