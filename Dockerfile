@@ -1,5 +1,4 @@
 FROM runpod/worker-comfyui:5.8.4-base
-
 USER root
 
 # CACHE BREAKER: Forces the build server to stop skipping the installation step
