@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
+    if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
+        pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
+    fi
 RUN git clone https://github.com/Granddyser/wan-video-extender /comfyui/custom_nodes/wan-video-extender && \
     if [ -f /comfyui/custom_nodes/wan-video-extender/requirements.txt ]; then \
         pip install --no-cache-dir -r /comfyui/custom_nodes/wan-video-extender/requirements.txt; \
