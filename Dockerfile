@@ -37,8 +37,7 @@ RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/c
         (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
         echo "WARN: falling back to default branch HEAD")
 
-RUN git clone https://github.com/theUpsider/ComfyUI-Logic /comfyui/custom_nodes/ComfyUI-Logic
-
+RUN git clone https://github.com/thefuzzlemind/ComfyUI-Logic /comfyui/custom_nodes/ComfyUI-Logic
 # If you use prompt-all-in-one-mw, add its repo here:
 # RUN git clone <PROMPT_ALL_IN_ONE_MW_REPO_URL> /comfyui/custom_nodes/prompt-all-in-one-mw
 
