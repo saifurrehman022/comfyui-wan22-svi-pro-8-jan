@@ -1,8 +1,11 @@
 FROM runpod/worker-comfyui:5.8.4-base
 
+
 USER root
 
-# 1. Ensure system packages are present
+ENV PATH="/opt/venv/bin:${PATH}"
+
+# System packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
@@ -14,17 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# 📦 Fix: Use the container's native python3 executable to run pip modules globally
-RUN python3 -m pip install --no-cache-dir onnxruntime-gpu transformers
-
-# 🛑 Fix: Symlink the expected paths so custom node scripts don't break later
-RUN mkdir -p /opt/venv/bin && \
-    ln -sf /usr/bin/python3 /opt/venv/bin/python3 && \
-    ln -sf /usr/bin/python3 /opt/venv/bin/python && \
-    ln -sf $(which pip3 || echo "/usr/local/bin/pip3") /opt/venv/bin/pip3 && \
-    ln -sf $(which pip3 || echo "/usr/local/bin/pip3") /opt/venv/bin/pip
-
-# ⚡ Global ONNX and Package setup
+# Use the container's venv python for Python installs
+RUN /opt/venv/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN /opt/venv/bin/python -m pip install --no-cache-dir onnxruntime-gpu transformers
 
 # 2. IAMCCS custom nodes installed globally
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
