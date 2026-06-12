@@ -2,7 +2,6 @@ FROM runpod/worker-comfyui:5.8.4-base
 
 USER root
 
-# 1. Force real-time system packages update and install git + compilation prerequisites
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
@@ -14,52 +13,50 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Set standard system binary path variables
-ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/venv/bin:${PATH}"
+# Fix: Use standard system paths without forcing an empty /opt/venv override
+ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
 
-# 2. Install IAMCCS custom nodes
+# Fix: Install ONNX Runtime with proper GPU acceleration directly to RunPod's system Python environment
+RUN pip3 install --no-cache-dir onnxruntime-gpu
+
+# 2. IAMCCS custom nodes installed globally
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
     if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
-        /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
+        pip3 install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
 
-# FIX: ComfyUI-WanVideoWrapper-SVI was a private/missing repo on Well-Made.
-# SVI support is provided by kijai/ComfyUI-WanVideoWrapper (cloned below) + the SVI LoRA weights.
-# This step is intentionally skipped.
+# 3. Keep transformers current globally
+RUN pip3 install --no-cache-dir -U transformers
 
-# Keep Python packages current inside the virtual environment
-RUN /opt/venv/bin/pip install --no-cache-dir -U transformers
-
-# FIX: ComfyUI-Wan-SVI2Pro-FLF was also a private/missing repo on Well-Made.
-# The SVI2Pro workflow is handled by the kijai wrapper + the SVI_v2_PRO LoRA weights baked into the image.
-# This step is intentionally skipped.
-
-# Install the core WanVideo Wrapper (this is the real SVI-capable wrapper)
+# 4. Core WanVideo Wrapper (Handles SVI via LoRA weights)
 RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /comfyui/custom_nodes/ComfyUI-WanVideoWrapper && \
     if [ -f /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt ]; then \
-        /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt; \
+        pip3 install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-WanVideoWrapper/requirements.txt; \
     fi
 
-# 3. Install core utility node environments
+# 5. Utility nodes (pinned commits for reproducibility)
 RUN git clone https://github.com/kijai/ComfyUI-KJNodes /comfyui/custom_nodes/ComfyUI-KJNodes \
     && cd /comfyui/custom_nodes/ComfyUI-KJNodes \
     && (git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014 2>/dev/null || \
-        (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || \
+        (git fetch origin 79f529a84a8c20fe5dcdfa984c6be7a94102c014 --depth=1 \
+         && git checkout 79f529a84a8c20fe5dcdfa984c6be7a94102c014) || \
         echo "WARN: falling back to default branch HEAD")
 
 RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
     && cd /comfyui/custom_nodes/ComfyUI-VideoHelperSuite \
     && (git checkout 8550981384301e9bc5bfea83e5c2c75258102593 2>/dev/null || \
-        (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
+        (git fetch origin 8550981384301e9bc5bfea83e5c2c75258102593 --depth=1 \
+         && git checkout 8550981384301e9bc5bfea83e5c2c75258102593) || \
         echo "WARN: falling back to default branch HEAD")
 
 RUN git clone https://github.com/theUpsider/ComfyUI-Logic.git /comfyui/custom_nodes/ComfyUI-Logic
 
-# Install requirements for utility nodes
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
-RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then /opt/venv/bin/pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
-
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt ]; then \
+        pip3 install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-KJNodes/requirements.txt; fi
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt ]; then \
+        pip3 install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-VideoHelperSuite/requirements.txt; fi
+RUN if [ -f /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt ]; then \
+        pip3 install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI-Logic/requirements.txt; fi
 # Download models into comfyui
 RUN BACKOFFS="10 20 30 60 90" && for i in 1 2 3 4 5; do comfy model download --url 'https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors' --relative-path models/loras --filename 'wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors' && break; if [ $i -eq 5 ]; then echo "model-download failed after 5 attempts" >&2; exit 1; fi; SLEEP=$(echo $BACKOFFS | cut -d ' ' -f $i) && echo "model-download attempt $i failed; retrying in $SLEEP seconds" >&2; sleep $SLEEP; done
 
