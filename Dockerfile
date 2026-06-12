@@ -2,6 +2,7 @@ FROM runpod/worker-comfyui:5.8.4-base
 
 USER root
 
+# 1. Ensure system packages are present
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
@@ -13,18 +14,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Fix: Use standard system paths without forcing an empty /opt/venv override
-ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+# 📦 Fix: Use the container's native python3 executable to run pip modules globally
+RUN python3 -m pip install --no-cache-dir onnxruntime-gpu transformers
 
-
+# 🛑 Fix: Symlink the expected paths so custom node scripts don't break later
 RUN mkdir -p /opt/venv/bin && \
     ln -sf /usr/bin/python3 /opt/venv/bin/python3 && \
     ln -sf /usr/bin/python3 /opt/venv/bin/python && \
-    ln -sf /usr/bin/pip3 /opt/venv/bin/pip3 && \
-    ln -sf /usr/bin/pip3 /opt/venv/bin/pip
-
-# ⚡ Global ONNX and Package setup using the explicit full system path
-RUN /usr/bin/pip3 install --no-cache-dir onnxruntime-gpu transformers
+    ln -sf $(which pip3 || echo "/usr/local/bin/pip3") /opt/venv/bin/pip3 && \
+    ln -sf $(which pip3 || echo "/usr/local/bin/pip3") /opt/venv/bin/pip
 
 # ⚡ Global ONNX and Package setup
 
