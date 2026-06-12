@@ -16,17 +16,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Fix: Use standard system paths without forcing an empty /opt/venv override
 ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
 
-# Fix: Install ONNX Runtime with proper GPU acceleration directly to RunPod's system Python environment
-RUN pip3 install --no-cache-dir onnxruntime-gpu
+RUN mkdir -p /opt/venv/bin && \
+    ln -sf /usr/bin/python3 /opt/venv/bin/python3 && \
+    ln -sf /usr/bin/python3 /opt/venv/bin/python && \
+    ln -sf /usr/bin/pip3 /opt/venv/bin/pip3 && \
+    ln -sf /usr/bin/pip3 /opt/venv/bin/pip
 
+# ⚡ Global ONNX and Package setup
+RUN pip3 install --no-cache-dir onnxruntime-gpu transformers
 # 2. IAMCCS custom nodes installed globally
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
     if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
         pip3 install --no-cache-dir -r /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt; \
     fi
 
-# 3. Keep transformers current globally
-RUN pip3 install --no-cache-dir -U transformers
+
 
 # 4. Core WanVideo Wrapper (Handles SVI via LoRA weights)
 RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper /comfyui/custom_nodes/ComfyUI-WanVideoWrapper && \
