@@ -16,14 +16,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Fix: Use standard system paths without forcing an empty /opt/venv override
 ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
 
+
 RUN mkdir -p /opt/venv/bin && \
     ln -sf /usr/bin/python3 /opt/venv/bin/python3 && \
     ln -sf /usr/bin/python3 /opt/venv/bin/python && \
     ln -sf /usr/bin/pip3 /opt/venv/bin/pip3 && \
     ln -sf /usr/bin/pip3 /opt/venv/bin/pip
 
+# ⚡ Global ONNX and Package setup using the explicit full system path
+RUN /usr/bin/pip3 install --no-cache-dir onnxruntime-gpu transformers
+
 # ⚡ Global ONNX and Package setup
-RUN pip3 install --no-cache-dir onnxruntime-gpu transformers
+
 # 2. IAMCCS custom nodes installed globally
 RUN git clone https://github.com/IAMCCS/IAMCCS-nodes /comfyui/custom_nodes/IAMCCS-nodes && \
     if [ -f /comfyui/custom_nodes/IAMCCS-nodes/requirements.txt ]; then \
